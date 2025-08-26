@@ -1,0 +1,458 @@
+package com.arbmonitor.api.controller;
+
+import com.arbmonitor.api.dto.*;
+import com.arbmonitor.api.model.ComplianceRule;
+import com.arbmonitor.api.model.User;
+import com.arbmonitor.api.repository.ComplianceRuleRepository;
+import com.arbmonitor.api.repository.UserRepository;
+import com.arbmonitor.api.service.UserService;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+@RestController
+@RequestMapping("/api/admin")
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
+public class AdminController {
+
+    private final UserRepository userRepository;
+    private final ComplianceRuleRepository complianceRuleRepository;
+    private final UserService userService;
+
+    @Autowired
+    public AdminController(UserRepository userRepository, 
+                          ComplianceRuleRepository complianceRuleRepository,
+                          UserService userService) {
+        this.userRepository = userRepository;
+        this.complianceRuleRepository = complianceRuleRepository;
+        this.userService = userService;
+    }
+
+    // ==================== USER MANAGEMENT ====================
+
+    /**
+     * Get all users (with pagination)
+     */
+    @GetMapping("/users")
+    public ResponseEntity<Map<String, Object>> getAllUsers(
+            @RequestHeader("X-User-ID") Long adminId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+        
+        if (!isAdmin(adminId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Access denied", "message", "Admin privileges required"));
+        }
+
+        Sort sort = sortDir.equalsIgnoreCase("desc") 
+            ? Sort.by(sortBy).descending() 
+            : Sort.by(sortBy).ascending();
+        
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<User> users = userRepository.findAll(pageable);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("users", users.getContent());
+        response.put("totalElements", users.getTotalElements());
+        response.put("totalPages", users.getTotalPages());
+        response.put("currentPage", users.getNumber());
+        response.put("pageSize", users.getSize());
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Get user by ID
+     */
+    @GetMapping("/users/{userId}")
+    public ResponseEntity<Object> getUserById(
+            @RequestHeader("X-User-ID") Long adminId,
+            @PathVariable Long userId) {
+        
+        if (!isAdmin(adminId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Access denied", "message", "Admin privileges required"));
+        }
+
+        Optional<User> user = userRepository.findById(userId);
+        if (user.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "User not found", "message", "User with ID " + userId + " does not exist"));
+        }
+
+        return ResponseEntity.ok(user.get());
+    }
+
+    /**
+     * Create new user
+     */
+    @PostMapping("/users")
+    public ResponseEntity<Object> createUser(
+            @RequestHeader("X-User-ID") Long adminId,
+            @Valid @RequestBody CreateUserDTO createUserDTO) {
+        
+        if (!isAdmin(adminId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Access denied", "message", "Admin privileges required"));
+        }
+
+        // Check if email already exists
+        if (userRepository.existsByEmail(createUserDTO.getEmail())) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("error", "Email already exists", "message", "A user with this email already exists"));
+        }
+
+        User user = new User();
+        user.setEmail(createUserDTO.getEmail());
+        user.setName(createUserDTO.getName());
+        user.setSubscriptionStatus(createUserDTO.getSubscriptionStatus());
+        user.setRole(createUserDTO.getRole());
+        
+        if (createUserDTO.getMetaApiKey() != null && !createUserDTO.getMetaApiKey().trim().isEmpty()) {
+            user.setMetaApiKey(createUserDTO.getMetaApiKey());
+        }
+
+        User savedUser = userRepository.save(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
+    }
+
+    /**
+     * Update user
+     */
+    @PutMapping("/users/{userId}")
+    public ResponseEntity<Object> updateUser(
+            @RequestHeader("X-User-ID") Long adminId,
+            @PathVariable Long userId,
+            @Valid @RequestBody UpdateUserDTO updateUserDTO) {
+        
+        if (!isAdmin(adminId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Access denied", "message", "Admin privileges required"));
+        }
+
+        Optional<User> optionalUser = userRepository.findById(userId);
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "User not found", "message", "User with ID " + userId + " does not exist"));
+        }
+
+        User user = optionalUser.get();
+
+        // Update fields if provided
+        if (updateUserDTO.getEmail() != null) {
+            // Check if new email is already taken by another user
+            Optional<User> existingUser = userRepository.findByEmail(updateUserDTO.getEmail());
+            if (existingUser.isPresent() && !existingUser.get().getId().equals(userId)) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(Map.of("error", "Email already exists", "message", "Another user already has this email"));
+            }
+            user.setEmail(updateUserDTO.getEmail());
+        }
+        
+        if (updateUserDTO.getName() != null) {
+            user.setName(updateUserDTO.getName());
+        }
+        
+        if (updateUserDTO.getSubscriptionStatus() != null) {
+            user.setSubscriptionStatus(updateUserDTO.getSubscriptionStatus());
+        }
+        
+        if (updateUserDTO.getRole() != null) {
+            user.setRole(updateUserDTO.getRole());
+        }
+        
+        if (updateUserDTO.getMetaApiKey() != null) {
+            user.setMetaApiKey(updateUserDTO.getMetaApiKey().trim().isEmpty() ? null : updateUserDTO.getMetaApiKey());
+        }
+
+        User savedUser = userRepository.save(user);
+        return ResponseEntity.ok(savedUser);
+    }
+
+    /**
+     * Delete user
+     */
+    @DeleteMapping("/users/{userId}")
+    public ResponseEntity<Object> deleteUser(
+            @RequestHeader("X-User-ID") Long adminId,
+            @PathVariable Long userId) {
+        
+        if (!isAdmin(adminId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Access denied", "message", "Admin privileges required"));
+        }
+
+        // Prevent admin from deleting themselves
+        if (adminId.equals(userId)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "Cannot delete self", "message", "You cannot delete your own account"));
+        }
+
+        if (!userRepository.existsById(userId)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "User not found", "message", "User with ID " + userId + " does not exist"));
+        }
+
+        userRepository.deleteById(userId);
+        return ResponseEntity.ok(Map.of("message", "User deleted successfully"));
+    }
+
+    // ==================== COMPLIANCE RULE MANAGEMENT ====================
+
+    /**
+     * Get all compliance rules (with pagination)
+     */
+    @GetMapping("/compliance-rules")
+    public ResponseEntity<Map<String, Object>> getAllComplianceRules(
+            @RequestHeader("X-User-ID") Long adminId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir,
+            @RequestParam(required = false) ComplianceRule.RuleCategory category,
+            @RequestParam(required = false) ComplianceRule.RuleSeverity severity,
+            @RequestParam(required = false) Boolean active) {
+        
+        if (!isAdmin(adminId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Access denied", "message", "Admin privileges required"));
+        }
+
+        Sort sort = sortDir.equalsIgnoreCase("desc") 
+            ? Sort.by(sortBy).descending() 
+            : Sort.by(sortBy).ascending();
+        
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<ComplianceRule> rules;
+
+        // Apply filters
+        if (category != null && severity != null && active != null) {
+            rules = complianceRuleRepository.findByCategoryAndSeverityAndActive(category, severity, active, pageable);
+        } else if (category != null && active != null) {
+            rules = complianceRuleRepository.findByCategoryAndActive(category, active, pageable);
+        } else if (severity != null && active != null) {
+            rules = complianceRuleRepository.findBySeverityAndActive(severity, active, pageable);
+        } else if (category != null) {
+            rules = complianceRuleRepository.findByCategory(category, pageable);
+        } else if (severity != null) {
+            rules = complianceRuleRepository.findBySeverity(severity, pageable);
+        } else if (active != null) {
+            rules = complianceRuleRepository.findByActive(active, pageable);
+        } else {
+            rules = complianceRuleRepository.findAll(pageable);
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("rules", rules.getContent());
+        response.put("totalElements", rules.getTotalElements());
+        response.put("totalPages", rules.getTotalPages());
+        response.put("currentPage", rules.getNumber());
+        response.put("pageSize", rules.getSize());
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Get compliance rule by ID
+     */
+    @GetMapping("/compliance-rules/{ruleId}")
+    public ResponseEntity<Object> getComplianceRuleById(
+            @RequestHeader("X-User-ID") Long adminId,
+            @PathVariable Long ruleId) {
+        
+        if (!isAdmin(adminId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Access denied", "message", "Admin privileges required"));
+        }
+
+        Optional<ComplianceRule> rule = complianceRuleRepository.findById(ruleId);
+        if (rule.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Rule not found", "message", "Compliance rule with ID " + ruleId + " does not exist"));
+        }
+
+        return ResponseEntity.ok(rule.get());
+    }
+
+    /**
+     * Create new compliance rule
+     */
+    @PostMapping("/compliance-rules")
+    public ResponseEntity<Object> createComplianceRule(
+            @RequestHeader("X-User-ID") Long adminId,
+            @Valid @RequestBody CreateComplianceRuleDTO createRuleDTO) {
+        
+        if (!isAdmin(adminId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Access denied", "message", "Admin privileges required"));
+        }
+
+        // Check if rule name already exists
+        if (complianceRuleRepository.existsByRuleName(createRuleDTO.getRuleName())) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("error", "Rule name already exists", "message", "A rule with this name already exists"));
+        }
+
+        ComplianceRule rule = new ComplianceRule();
+        rule.setRuleName(createRuleDTO.getRuleName());
+        rule.setDescription(createRuleDTO.getDescription());
+        rule.setExamples(createRuleDTO.getExamples());
+        rule.setCategory(createRuleDTO.getCategory());
+        rule.setSeverity(createRuleDTO.getSeverity());
+        rule.setActive(createRuleDTO.getActive());
+        rule.setRulePattern(createRuleDTO.getRulePattern());
+
+        ComplianceRule savedRule = complianceRuleRepository.save(rule);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedRule);
+    }
+
+    /**
+     * Update compliance rule
+     */
+    @PutMapping("/compliance-rules/{ruleId}")
+    public ResponseEntity<Object> updateComplianceRule(
+            @RequestHeader("X-User-ID") Long adminId,
+            @PathVariable Long ruleId,
+            @Valid @RequestBody UpdateComplianceRuleDTO updateRuleDTO) {
+        
+        if (!isAdmin(adminId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Access denied", "message", "Admin privileges required"));
+        }
+
+        Optional<ComplianceRule> optionalRule = complianceRuleRepository.findById(ruleId);
+        if (optionalRule.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Rule not found", "message", "Compliance rule with ID " + ruleId + " does not exist"));
+        }
+
+        ComplianceRule rule = optionalRule.get();
+
+        // Update fields if provided
+        if (updateRuleDTO.getRuleName() != null) {
+            // Check if new name is already taken by another rule
+            Optional<ComplianceRule> existingRule = complianceRuleRepository.findByRuleName(updateRuleDTO.getRuleName());
+            if (existingRule.isPresent() && !existingRule.get().getId().equals(ruleId)) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(Map.of("error", "Rule name already exists", "message", "Another rule already has this name"));
+            }
+            rule.setRuleName(updateRuleDTO.getRuleName());
+        }
+        
+        if (updateRuleDTO.getDescription() != null) {
+            rule.setDescription(updateRuleDTO.getDescription());
+        }
+        
+        if (updateRuleDTO.getExamples() != null) {
+            rule.setExamples(updateRuleDTO.getExamples());
+        }
+        
+        if (updateRuleDTO.getCategory() != null) {
+            rule.setCategory(updateRuleDTO.getCategory());
+        }
+        
+        if (updateRuleDTO.getSeverity() != null) {
+            rule.setSeverity(updateRuleDTO.getSeverity());
+        }
+        
+        if (updateRuleDTO.getActive() != null) {
+            rule.setActive(updateRuleDTO.getActive());
+        }
+        
+        if (updateRuleDTO.getRulePattern() != null) {
+            rule.setRulePattern(updateRuleDTO.getRulePattern());
+        }
+
+        ComplianceRule savedRule = complianceRuleRepository.save(rule);
+        return ResponseEntity.ok(savedRule);
+    }
+
+    /**
+     * Delete compliance rule
+     */
+    @DeleteMapping("/compliance-rules/{ruleId}")
+    public ResponseEntity<Object> deleteComplianceRule(
+            @RequestHeader("X-User-ID") Long adminId,
+            @PathVariable Long ruleId) {
+        
+        if (!isAdmin(adminId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Access denied", "message", "Admin privileges required"));
+        }
+
+        if (!complianceRuleRepository.existsById(ruleId)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Rule not found", "message", "Compliance rule with ID " + ruleId + " does not exist"));
+        }
+
+        complianceRuleRepository.deleteById(ruleId);
+        return ResponseEntity.ok(Map.of("message", "Compliance rule deleted successfully"));
+    }
+
+    // ==================== ADMIN UTILITIES ====================
+
+    /**
+     * Get system statistics
+     */
+    @GetMapping("/stats")
+    public ResponseEntity<Object> getSystemStats(@RequestHeader("X-User-ID") Long adminId) {
+        if (!isAdmin(adminId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Access denied", "message", "Admin privileges required"));
+        }
+
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalUsers", userRepository.count());
+        stats.put("totalAdmins", userRepository.countByRole(User.UserRole.ADMIN));
+        stats.put("totalComplianceRules", complianceRuleRepository.count());
+        stats.put("activeComplianceRules", complianceRuleRepository.countByActive(true));
+        stats.put("timestamp", LocalDateTime.now());
+
+        return ResponseEntity.ok(stats);
+    }
+
+    /**
+     * Get available enum values for dropdowns
+     */
+    @GetMapping("/enums")
+    public ResponseEntity<Object> getEnumValues(@RequestHeader("X-User-ID") Long adminId) {
+        if (!isAdmin(adminId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Access denied", "message", "Admin privileges required"));
+        }
+
+        Map<String, Object> enums = new HashMap<>();
+        enums.put("userRoles", User.UserRole.values());
+        enums.put("subscriptionStatuses", User.SubscriptionStatus.values());
+        enums.put("ruleCategories", ComplianceRule.RuleCategory.values());
+        enums.put("ruleSeverities", ComplianceRule.RuleSeverity.values());
+
+        return ResponseEntity.ok(enums);
+    }
+
+    // ==================== HELPER METHODS ====================
+
+    private boolean isAdmin(Long userId) {
+        Optional<User> user = userRepository.findById(userId);
+        return user.isPresent() && user.get().getRole() == User.UserRole.ADMIN;
+    }
+}
+
+
+
+
+

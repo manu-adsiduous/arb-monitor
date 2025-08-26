@@ -1,0 +1,100 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Production builds
+build/
+dist/
+out/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+logs/*.log
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Spring Boot
+spring-boot-*.jar
+
+# Database files (H2)
+backend/data/
+*.mv.db
+*.trace.db
+
+# Backup files (keep structure but ignore actual backups)
+backend/backups/*.json
+
+# Media files
+backend/media/
+frontend/public/media/
+
+# Temporary files
+*.tmp
+*.temp
+*.backup
+
+# Next.js
+.next/
+.vercel/
+
+# Session logs and status files
+CURRENT_SESSION_STATUS.md
+logs/session-*.md
+logs/chat-log-*.md
+
+# API keys and sensitive data
+**/application-prod.yml
+**/*-prod.yml
