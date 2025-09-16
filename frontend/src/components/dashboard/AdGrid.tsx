@@ -40,7 +40,7 @@ interface ScrapedAd {
   fundingEntity: string;
   adCreationDate: string;
   adDeliveryStartDate: string;
-  adDeliveryStopDate: string;
+  adDeliveryStopDate: string | null;
   isActive: boolean;
   spendRangeLower: number;
   spendRangeUpper: number;
@@ -335,6 +335,8 @@ export function AdGrid({ domainName, className = "" }: AdGridProps) {
           "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800&h=600&fit=crop"
         ],
         videoUrls: [],
+        localImagePaths: [],
+        localVideoPaths: [],
         adFormat: "SINGLE_IMAGE",
         fundingEntity: "Deal Finder LLC",
         adCreationDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
@@ -362,6 +364,8 @@ export function AdGrid({ domainName, className = "" }: AdGridProps) {
         displayUrl: domainName,
         imageUrls: [],
         videoUrls: ["https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4"],
+        localImagePaths: [],
+        localVideoPaths: [],
         adFormat: "VIDEO",
         fundingEntity: "Smart Shopping Inc",
         adCreationDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
@@ -393,6 +397,8 @@ export function AdGrid({ domainName, className = "" }: AdGridProps) {
           "https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?w=800&h=600&fit=crop"
         ],
         videoUrls: [],
+        localImagePaths: [],
+        localVideoPaths: [],
         adFormat: "CAROUSEL",
         fundingEntity: "Deal Masters Corp",
         adCreationDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
@@ -422,6 +428,8 @@ export function AdGrid({ domainName, className = "" }: AdGridProps) {
           "https://images.unsplash.com/photo-1556742111-a301076d9d18?w=800&h=600&fit=crop"
         ],
         videoUrls: [],
+        localImagePaths: [],
+        localVideoPaths: [],
         adFormat: "COLLECTION",
         fundingEntity: "Bargain Central LLC",
         adCreationDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),

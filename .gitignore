@@ -97,4 +97,4 @@ logs/chat-log-*.md
 
 # API keys and sensitive data
 **/application-prod.yml
-**/*-prod.yml
+**/*-prod.ymlbackend/credentials-local.sh

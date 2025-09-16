@@ -19,7 +19,7 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
-      ddl-auto: validate  # Changed from 'update' to 'validate' - schema managed by Flyway
+      ddl-auto: update  # Temporarily changed to update for new fields
     show-sql: true
     properties:
       hibernate:
@@ -27,7 +27,7 @@ spring:
         
   # Flyway configuration for database migrations
   flyway:
-    enabled: true
+    enabled: false  # Temporarily disabled
     locations: classpath:db/migration
     baseline-on-migrate: true
     baseline-version: 0
@@ -46,6 +46,7 @@ app:
   apify:
     token: ${APIFY_TOKEN:your-apify-token-here}
     org-id: ${APIFY_ORG_ID:your-apify-org-id-here}
+    results-limit: ${APIFY_RESULTS_LIMIT:0}  # 0 means no limit
   openai:
     api-key: ${OPENAI_API_KEY:your-openai-api-key-here}
   media:

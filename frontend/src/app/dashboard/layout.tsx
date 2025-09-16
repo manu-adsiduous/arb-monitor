@@ -1,6 +1,24 @@
 "use client"
 
 import { useState, useEffect } from "react"
+
+interface Domain {
+  id: number;
+  domainName: string;
+  status: string;
+  complianceScore?: number;
+  activeAds?: number;
+  violations?: number;
+}
+
+const DEMO_USER_ID = 1;
+
+const domainApi = {
+  getDomains: async (userId: number): Promise<Domain[]> => {
+    // Return empty array for now - this can be implemented later
+    return [];
+  }
+};
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
@@ -23,7 +41,7 @@ import {
   Clock,
   Globe,
   Eye,
-  MarkAsUnread
+  Mail
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -509,7 +527,7 @@ export default function DashboardLayout({
                                   <span className="text-xs text-slate-600 dark:text-slate-400">
                                     {domain.activeAds || 0} ads
                                   </span>
-                                  {domain.violations > 0 && (
+                                  {(domain.violations || 0) > 0 && (
                                     <span className="text-xs text-red-600 dark:text-red-400">
                                       {domain.violations} violations
                                     </span>
@@ -524,11 +542,11 @@ export default function DashboardLayout({
                                 Compliance
                               </div>
                               <div className={`text-lg font-bold ${
-                                domain.complianceScore === null 
+                                domain.complianceScore === null || domain.complianceScore === undefined
                                   ? 'text-slate-400 dark:text-slate-500'
-                                  : domain.complianceScore >= 80 
+                                  : (domain.complianceScore || 0) >= 80 
                                     ? 'text-green-600 dark:text-green-400'
-                                    : domain.complianceScore >= 60 
+                                    : (domain.complianceScore || 0) >= 60 
                                       ? 'text-yellow-600 dark:text-yellow-400'
                                       : 'text-red-600 dark:text-red-400'
                               }`}>

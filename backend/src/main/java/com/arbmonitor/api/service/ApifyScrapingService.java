@@ -71,6 +71,9 @@ public class ApifyScrapingService {
     @Value("${app.apify.token:}")
     private String apifyToken;
     
+    @Value("${app.apify.results-limit:0}")
+    private int resultsLimit;
+    
     private static final String APIFY_API_BASE = "https://api.apify.com/v2";
     private static final String FACEBOOK_ADS_SCRAPER_ID = "apify~facebook-ads-scraper";
     
@@ -266,7 +269,13 @@ public class ApifyScrapingService {
             );
             
             input.put("startUrls", startUrls);
-            input.put("resultsLimit", 100); // Limit for testing
+            // Use configurable limit (0 means no limit)
+            if (resultsLimit > 0) {
+                input.put("resultsLimit", resultsLimit);
+                logger.info("Using configured results limit: {}", resultsLimit);
+            } else {
+                logger.info("No results limit configured - scraping all available ads");
+            }
             input.put("isDetailsPerAd", true);
             input.put("onlyTotal", false);
             input.put("activeStatus", "active");

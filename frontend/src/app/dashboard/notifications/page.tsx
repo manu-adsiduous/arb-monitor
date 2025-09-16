@@ -257,7 +257,7 @@ export default function NotificationsPage() {
           <Checkbox
             id="unread-only"
             checked={showUnreadOnly}
-            onCheckedChange={setShowUnreadOnly}
+            onCheckedChange={(checked) => setShowUnreadOnly(checked === true)}
           />
           <label 
             htmlFor="unread-only" 

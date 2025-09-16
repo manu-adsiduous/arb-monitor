@@ -42,6 +42,19 @@ public class AdAnalysis {
     @Column(name = "image_text", columnDefinition = "TEXT")
     private String imageText; // Extracted via OCR
     
+    // New structured analysis fields
+    @Column(name = "ocr_text", columnDefinition = "TEXT")
+    private String ocrText; // OCR text from all images
+    
+    @Column(name = "visual_analysis", columnDefinition = "TEXT")
+    private String visualAnalysis; // Visual elements description
+    
+    @Column(name = "audio_transcription", columnDefinition = "TEXT")
+    private String audioTranscription; // Audio transcription from videos
+    
+    @Column(name = "landing_page_screenshot_path", columnDefinition = "TEXT")
+    private String landingPageScreenshotPath; // Path to landing page screenshot
+    
     @Column(name = "landing_page_url", columnDefinition = "TEXT")
     private String landingPageUrl;
     
@@ -158,6 +171,38 @@ public class AdAnalysis {
     
     public void setImageText(String imageText) {
         this.imageText = imageText;
+    }
+    
+    public String getOcrText() {
+        return ocrText;
+    }
+    
+    public void setOcrText(String ocrText) {
+        this.ocrText = ocrText;
+    }
+    
+    public String getVisualAnalysis() {
+        return visualAnalysis;
+    }
+    
+    public void setVisualAnalysis(String visualAnalysis) {
+        this.visualAnalysis = visualAnalysis;
+    }
+    
+    public String getAudioTranscription() {
+        return audioTranscription;
+    }
+    
+    public void setAudioTranscription(String audioTranscription) {
+        this.audioTranscription = audioTranscription;
+    }
+    
+    public String getLandingPageScreenshotPath() {
+        return landingPageScreenshotPath;
+    }
+    
+    public void setLandingPageScreenshotPath(String landingPageScreenshotPath) {
+        this.landingPageScreenshotPath = landingPageScreenshotPath;
     }
     
     public String getLandingPageUrl() {

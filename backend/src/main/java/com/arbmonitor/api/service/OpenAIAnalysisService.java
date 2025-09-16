@@ -404,4 +404,174 @@ public class OpenAIAnalysisService {
         public String getReferrerAdCreative() { return referrerAdCreative; }
         public String getPageContent() { return pageContent; }
     }
+    
+    /**
+     * Analyze ad creative compliance using structured JSON input/output
+     */
+    public String analyzeAdCreativeCompliance(String jsonRequest) {
+        try {
+            logger.debug("Analyzing ad creative compliance with structured JSON");
+            
+            // Parse the JSON request to extract content
+            JsonNode requestNode = objectMapper.readTree(jsonRequest);
+            JsonNode contentNode = requestNode.get("content");
+            
+            String prompt = buildStructuredAdCreativePrompt(contentNode);
+            return callOpenAI(prompt);
+            
+        } catch (Exception e) {
+            logger.error("Error in structured ad creative compliance analysis", e);
+            return createErrorJsonResponse("Ad creative analysis failed: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Analyze landing page compliance using structured JSON input/output
+     */
+    public String analyzeLandingPageCompliance(String jsonRequest) {
+        try {
+            logger.debug("Analyzing landing page compliance with structured JSON");
+            
+            // Parse the JSON request to extract content
+            JsonNode requestNode = objectMapper.readTree(jsonRequest);
+            
+            String prompt = buildStructuredLandingPagePrompt(requestNode);
+            return callOpenAI(prompt);
+            
+        } catch (Exception e) {
+            logger.error("Error in structured landing page compliance analysis", e);
+            return createErrorJsonResponse("Landing page analysis failed: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Build structured prompt for ad creative compliance analysis
+     */
+    private String buildStructuredAdCreativePrompt(JsonNode contentNode) {
+        StringBuilder prompt = new StringBuilder();
+        
+        prompt.append("You are an expert compliance analyst for digital advertising. ");
+        prompt.append("Analyze the following ad creative content for compliance violations.\n\n");
+        
+        prompt.append("IMPORTANT: This ad may be in any language (English, Spanish, French, German, Italian, Portuguese, etc.). ");
+        prompt.append("Analyze the content in its original language and provide your analysis in English.\n\n");
+        
+        prompt.append("AD CONTENT TO ANALYZE:\n");
+        if (contentNode.has("text_content")) {
+            prompt.append("Text Content:\n").append(contentNode.get("text_content").asText()).append("\n\n");
+        }
+        if (contentNode.has("ocr_text")) {
+            prompt.append("OCR Text from Images:\n").append(contentNode.get("ocr_text").asText()).append("\n\n");
+        }
+        if (contentNode.has("visual_analysis")) {
+            prompt.append("Visual Analysis:\n").append(contentNode.get("visual_analysis").asText()).append("\n\n");
+        }
+        if (contentNode.has("audio_transcription")) {
+            prompt.append("Audio Transcription:\n").append(contentNode.get("audio_transcription").asText()).append("\n\n");
+        }
+        
+        prompt.append("COMPLIANCE RULES TO CHECK:\n");
+        prompt.append("1. Misleading Claims: False or exaggerated promises\n");
+        prompt.append("2. Medical Claims: Unsubstantiated health benefits\n");
+        prompt.append("3. Financial Guarantees: Unrealistic income promises\n");
+        prompt.append("4. Before/After Claims: Unverifiable transformation claims\n");
+        prompt.append("5. Clickbait Language: Sensational or deceptive headlines\n");
+        prompt.append("6. False Urgency: Fake scarcity or time pressure\n\n");
+        
+        prompt.append("REQUIRED JSON RESPONSE FORMAT:\n");
+        prompt.append("{\n");
+        prompt.append("  \"compliant\": boolean,\n");
+        prompt.append("  \"confidence_score\": number (0.0-1.0),\n");
+        prompt.append("  \"violations\": [\n");
+        prompt.append("    {\n");
+        prompt.append("      \"rule_type\": \"string\",\n");
+        prompt.append("      \"severity\": \"LOW|MEDIUM|HIGH|CRITICAL\",\n");
+        prompt.append("      \"description\": \"string\",\n");
+        prompt.append("      \"violated_text\": \"string\"\n");
+        prompt.append("    }\n");
+        prompt.append("  ],\n");
+        prompt.append("  \"reasoning\": \"string explaining the analysis\"\n");
+        prompt.append("}\n\n");
+        
+        prompt.append("Respond ONLY with valid JSON. No additional text or explanation outside the JSON structure.");
+        
+        return prompt.toString();
+    }
+    
+    /**
+     * Build structured prompt for landing page compliance analysis
+     */
+    private String buildStructuredLandingPagePrompt(JsonNode requestNode) {
+        StringBuilder prompt = new StringBuilder();
+        
+        prompt.append("You are an expert compliance analyst for digital advertising. ");
+        prompt.append("Analyze the following landing page for compliance and relevance to the ad.\n\n");
+        
+        prompt.append("IMPORTANT: Content may be in any language. Analyze in original language, respond in English.\n\n");
+        
+        if (requestNode.has("ad_content")) {
+            JsonNode adContent = requestNode.get("ad_content");
+            prompt.append("ORIGINAL AD CONTENT:\n");
+            if (adContent.has("headline")) {
+                prompt.append("Headline: ").append(adContent.get("headline").asText()).append("\n");
+            }
+            if (adContent.has("primary_text")) {
+                prompt.append("Primary Text: ").append(adContent.get("primary_text").asText()).append("\n");
+            }
+            if (adContent.has("description")) {
+                prompt.append("Description: ").append(adContent.get("description").asText()).append("\n");
+            }
+            prompt.append("\n");
+        }
+        
+        if (requestNode.has("landing_page_content")) {
+            prompt.append("LANDING PAGE CONTENT:\n");
+            prompt.append(requestNode.get("landing_page_content").asText()).append("\n\n");
+        }
+        
+        prompt.append("COMPLIANCE CHECKS:\n");
+        prompt.append("1. Relevance: Does the landing page match the ad promise?\n");
+        prompt.append("2. Accessibility: Is the page functional and user-friendly?\n");
+        prompt.append("3. Content Quality: Is the content valuable and not misleading?\n");
+        prompt.append("4. User Experience: Does the page provide what users expect?\n\n");
+        
+        prompt.append("REQUIRED JSON RESPONSE FORMAT:\n");
+        prompt.append("{\n");
+        prompt.append("  \"compliant\": boolean,\n");
+        prompt.append("  \"relevance_score\": number (0.0-1.0),\n");
+        prompt.append("  \"violations\": [\n");
+        prompt.append("    {\n");
+        prompt.append("      \"rule_type\": \"string\",\n");
+        prompt.append("      \"severity\": \"LOW|MEDIUM|HIGH|CRITICAL\",\n");
+        prompt.append("      \"description\": \"string\",\n");
+        prompt.append("      \"violated_text\": \"string\"\n");
+        prompt.append("    }\n");
+        prompt.append("  ],\n");
+        prompt.append("  \"reasoning\": \"string explaining the analysis\",\n");
+        prompt.append("  \"page_summary\": \"brief summary of landing page content\"\n");
+        prompt.append("}\n\n");
+        
+        prompt.append("Respond ONLY with valid JSON. No additional text or explanation outside the JSON structure.");
+        
+        return prompt.toString();
+    }
+    
+    /**
+     * Create error JSON response
+     */
+    private String createErrorJsonResponse(String errorMessage) {
+        try {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("compliant", false);
+            errorResponse.put("confidence_score", 0.0);
+            errorResponse.put("violations", List.of());
+            errorResponse.put("reasoning", errorMessage);
+            errorResponse.put("error", true);
+            
+            return objectMapper.writeValueAsString(errorResponse);
+        } catch (Exception e) {
+            logger.error("Error creating error JSON response", e);
+            return "{\"compliant\": false, \"confidence_score\": 0.0, \"violations\": [], \"reasoning\": \"" + errorMessage + "\", \"error\": true}";
+        }
+    }
 }

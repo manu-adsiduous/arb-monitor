@@ -6,6 +6,7 @@ import com.arbmonitor.api.model.Domain;
 import com.arbmonitor.api.model.ScrapedAd;
 import com.arbmonitor.api.model.Violation;
 import com.arbmonitor.api.repository.AdAnalysisRepository;
+import java.util.Optional;
 import com.arbmonitor.api.repository.DomainRepository;
 import com.arbmonitor.api.repository.ScrapedAdRepository;
 import com.arbmonitor.api.repository.ViolationRepository;
@@ -169,6 +170,42 @@ public class ComplianceController {
     /**
      * Re-analyze ads for a domain
      */
+    @PostMapping("/analyze-ad/{metaAdId}")
+    public ResponseEntity<Map<String, Object>> analyzeIndividualAd(@PathVariable String metaAdId) {
+        try {
+            logger.info("Starting individual ad analysis for metaAdId: {}", metaAdId);
+            
+            // Find the scraped ad by metaAdId
+            Optional<ScrapedAd> adOpt = scrapedAdRepository.findByMetaAdId(metaAdId);
+            if (!adOpt.isPresent()) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("error", "Ad not found with metaAdId: " + metaAdId);
+                return ResponseEntity.notFound().build();
+            }
+            
+            ScrapedAd ad = adOpt.get();
+            
+            // Trigger individual ad analysis
+            complianceAnalysisService.analyzeIndividualAd(ad);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Individual ad analysis completed successfully");
+            response.put("metaAdId", metaAdId);
+            response.put("analyzedAt", java.time.LocalDateTime.now());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("Error analyzing individual ad {}: {}", metaAdId, e.getMessage(), e);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("error", "Failed to analyze ad: " + e.getMessage());
+            response.put("metaAdId", metaAdId);
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
     @PostMapping("/reanalyze/{domainName}")
     public ResponseEntity<Map<String, Object>> reanalyzeDomain(@PathVariable String domainName) {
         try {

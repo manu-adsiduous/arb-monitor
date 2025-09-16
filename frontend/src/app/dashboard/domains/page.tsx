@@ -40,8 +40,8 @@ const DEMO_USER_ID = 1;
 // Custom hook for long press detection
 const useLongPress = (onLongPress: () => void, delay = 800) => {
   const [longPressTriggered, setLongPressTriggered] = useState(false)
-  const timeout = useRef<NodeJS.Timeout>()
-  const target = useRef<EventTarget>()
+  const timeout = useRef<NodeJS.Timeout | null>(null)
+  const target = useRef<EventTarget | null>(null)
 
   const start = useCallback((event: React.MouseEvent | React.TouchEvent) => {
     if (event.target !== target.current) {

@@ -32,6 +32,9 @@ public class IndividualAdAnalysisService {
     @Autowired
     private OpenAIAnalysisService openAIAnalysisService;
     
+    @Autowired
+    private LandingPageScreenshotService landingPageScreenshotService;
+    
 
     
     /**
@@ -107,9 +110,22 @@ public class IndividualAdAnalysisService {
                 analysis.setPrimaryText(combinedText.toString());
             }
             
-            // Simple landing page content for now
-            String landingPageContent = "Landing page content analysis pending";
+            // Scrape landing page content
+            String landingPageContent = scrapeLandingPageContent(scrapedAd.getLandingPageUrl());
             analysis.setLandingPageContent(landingPageContent);
+            
+            // Capture landing page screenshot
+            logger.info("Capturing landing page screenshot for ad: {}", scrapedAd.getMetaAdId());
+            String screenshotPath = landingPageScreenshotService.captureScreenshot(
+                scrapedAd.getLandingPageUrl(), 
+                scrapedAd.getMetaAdId()
+            );
+            if (screenshotPath != null) {
+                analysis.setLandingPageScreenshotPath(screenshotPath);
+                logger.info("Screenshot captured successfully: {}", screenshotPath);
+            } else {
+                logger.warn("Failed to capture screenshot for ad: {}", scrapedAd.getMetaAdId());
+            }
             
             // Check if RAC analysis is enabled for this domain
             boolean racEnabled = domain.getRacParameter() != null && !domain.getRacParameter().trim().isEmpty();
@@ -244,5 +260,202 @@ public class IndividualAdAnalysisService {
         }
         notes.append("\nBased on Google AdSense for Search & RSOC compliance guidelines");
         return notes.toString();
+    }
+    
+    /**
+     * Scrape landing page content for analysis
+     */
+    private String scrapeLandingPageContent(String landingPageUrl) {
+        if (landingPageUrl == null || landingPageUrl.trim().isEmpty()) {
+            return "No landing page URL provided";
+        }
+        
+        try {
+            logger.info("Scraping landing page content: {}", landingPageUrl);
+            
+            // Clean URL by removing or replacing template variables
+            String cleanUrl = cleanUrlTemplateVariables(landingPageUrl);
+            logger.info("Cleaned URL for scraping: {}", cleanUrl);
+            
+            // Add comprehensive headers to avoid blocking and handle redirects
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+            headers.set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+            headers.set("Accept-Language", "en-US,en;q=0.5");
+            // Remove Accept-Encoding to avoid compression issues
+            headers.set("DNT", "1");
+            headers.set("Connection", "keep-alive");
+            headers.set("Upgrade-Insecure-Requests", "1");
+            
+            org.springframework.http.HttpEntity<String> entity = new org.springframework.http.HttpEntity<>(headers);
+            
+            // Configure RestTemplate to follow redirects and handle compression
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            
+            // Add message converters to handle different content types properly
+            restTemplate.getMessageConverters().add(0, new org.springframework.http.converter.StringHttpMessageConverter(java.nio.charset.StandardCharsets.UTF_8));
+            
+            // Create URI using the cleaned URL
+            java.net.URI uri = java.net.URI.create(cleanUrl);
+            
+            org.springframework.http.ResponseEntity<String> response = restTemplate.exchange(
+                uri, 
+                org.springframework.http.HttpMethod.GET, 
+                entity, 
+                String.class
+            );
+            
+            String htmlContent = response.getBody();
+            if (htmlContent == null || htmlContent.trim().isEmpty()) {
+                return "Landing page returned empty content";
+            }
+            
+            // Extract text content from HTML (basic implementation)
+            String textContent = extractTextFromHtml(htmlContent);
+            
+            if (textContent == null || textContent.trim().isEmpty()) {
+                return "No readable text content found on landing page";
+            }
+            
+            // Limit content length to avoid overwhelming the analysis
+            if (textContent.length() > 5000) {
+                textContent = textContent.substring(0, 5000) + "... [content truncated]";
+            }
+            
+            logger.info("Successfully scraped landing page content ({} characters): {}", 
+                       textContent.length(), landingPageUrl);
+            
+            return textContent;
+            
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            logger.warn("HTTP error scraping landing page {}: {} - {}", landingPageUrl, e.getStatusCode(), e.getMessage());
+            return "Landing page not accessible: " + e.getStatusCode() + " " + e.getMessage();
+        } catch (Exception e) {
+            logger.error("Error scraping landing page {}: {}", landingPageUrl, e.getMessage());
+            return "Failed to scrape landing page: " + e.getMessage();
+        }
+    }
+    
+    /**
+     * Clean URL by removing or replacing template variables like {{campaign.id}}
+     */
+    private String cleanUrlTemplateVariables(String url) {
+        if (url == null) return null;
+        
+        try {
+            // Remove template variables like {{campaign.id}}, {{adset.id}}, {{ad.id}}
+            // We'll remove the entire parameter if it contains template variables
+            String cleanUrl = url;
+            
+            // Split URL into base and query parameters
+            String[] urlParts = url.split("\\?", 2);
+            if (urlParts.length == 2) {
+                String baseUrl = urlParts[0];
+                String queryString = urlParts[1];
+                
+                // Process query parameters
+                String[] params = queryString.split("&");
+                StringBuilder cleanParams = new StringBuilder();
+                
+                for (String param : params) {
+                    // Skip parameters that contain template variables
+                    if (!param.contains("{{") && !param.contains("}}")) {
+                        if (cleanParams.length() > 0) {
+                            cleanParams.append("&");
+                        }
+                        cleanParams.append(param);
+                    }
+                }
+                
+                // Reconstruct URL
+                cleanUrl = baseUrl;
+                if (cleanParams.length() > 0) {
+                    cleanUrl += "?" + cleanParams.toString();
+                }
+            }
+            
+            return cleanUrl;
+            
+        } catch (Exception e) {
+            logger.warn("Error cleaning URL template variables from {}: {}", url, e.getMessage());
+            // Fallback: just remove template variables in place
+            return url.replaceAll("\\{\\{[^}]+\\}\\}", "placeholder");
+        }
+    }
+    
+    /**
+     * Extract readable text content from HTML
+     */
+    private String extractTextFromHtml(String htmlContent) {
+        if (htmlContent == null) return null;
+        
+        try {
+            // Check if content appears to be binary/corrupted
+            if (containsBinaryData(htmlContent)) {
+                logger.warn("HTML content appears to be binary or corrupted, attempting to decode");
+                return "Content appears to be binary or corrupted - unable to extract readable text";
+            }
+            
+            // Enhanced HTML tag removal and text extraction
+            String text = htmlContent
+                // Remove script and style content (case insensitive, multiline)
+                .replaceAll("(?is)<script[^>]*>.*?</script>", "")
+                .replaceAll("(?is)<style[^>]*>.*?</style>", "")
+                // Remove HTML comments
+                .replaceAll("<!--.*?-->", "")
+                // Remove common non-content tags
+                .replaceAll("(?is)<head[^>]*>.*?</head>", "")
+                .replaceAll("(?is)<nav[^>]*>.*?</nav>", "")
+                .replaceAll("(?is)<footer[^>]*>.*?</footer>", "")
+                // Remove HTML tags but preserve line breaks
+                .replaceAll("<br[^>]*>", "\n")
+                .replaceAll("<p[^>]*>", "\n")
+                .replaceAll("</p>", "\n")
+                .replaceAll("<div[^>]*>", "\n")
+                .replaceAll("</div>", "\n")
+                .replaceAll("<[^>]+>", " ")
+                // Decode HTML entities
+                .replace("&nbsp;", " ")
+                .replace("&amp;", "&")
+                .replace("&lt;", "<")
+                .replace("&gt;", ">")
+                .replace("&quot;", "\"")
+                .replace("&#39;", "'")
+                .replace("&apos;", "'")
+                .replace("&copy;", "©")
+                .replace("&reg;", "®")
+                .replace("&trade;", "™")
+                // Clean up whitespace but preserve paragraph breaks
+                .replaceAll("[ \\t]+", " ")  // Multiple spaces/tabs to single space
+                .replaceAll("\\n\\s*\\n", "\n\n")  // Multiple newlines to double newline
+                .replaceAll("^\\s+|\\s+$", "")  // Trim start/end
+                .trim();
+            
+            // Filter out very short or suspicious content
+            if (text.length() < 10) {
+                return "Extracted text too short - may indicate parsing issues";
+            }
+            
+            return text;
+            
+        } catch (Exception e) {
+            logger.warn("Error extracting text from HTML: {}", e.getMessage());
+            return "Failed to extract text from HTML content: " + e.getMessage();
+        }
+    }
+    
+    /**
+     * Check if content contains binary data or is corrupted
+     */
+    private boolean containsBinaryData(String content) {
+        if (content == null || content.length() < 100) return false;
+        
+        // Count non-printable characters
+        long nonPrintableCount = content.chars()
+            .filter(c -> c < 32 && c != 9 && c != 10 && c != 13)  // Exclude tab, LF, CR
+            .count();
+        
+        // If more than 10% of characters are non-printable, likely binary
+        return (nonPrintableCount * 100.0 / content.length()) > 10;
     }
 }

@@ -37,7 +37,10 @@ public class ComplianceAnalysisService {
 
     @Autowired
     private ScrapedAdRepository scrapedAdRepository;
-    
+
+    @Autowired
+    private DomainRepository domainRepository;
+
     @Autowired
     private VideoAnalysisService videoAnalysisService;
     
@@ -643,6 +646,19 @@ public class ComplianceAnalysisService {
     /**
      * Analyze a single ad with its own transaction to prevent session corruption
      */
+    /**
+     * Analyze a single ad by finding its domain
+     */
+    public AdAnalysis analyzeIndividualAd(ScrapedAd scrapedAd) {
+        // Find the domain for this ad
+        Domain domain = domainRepository.findByDomainName(scrapedAd.getDomainName());
+        if (domain == null) {
+            throw new RuntimeException("Domain not found: " + scrapedAd.getDomainName());
+        }
+        
+        return analyzeAdIndividually(scrapedAd, domain);
+    }
+
     @Transactional
     public AdAnalysis analyzeAdIndividually(ScrapedAd scrapedAd, Domain domain) {
         logger.info("Starting individual compliance analysis for ad: {} from domain: {}", 
