@@ -417,6 +417,19 @@ export default function AdDetailModal({
                           <div>
                             <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Ad Images</h4>
                             <AdImageCarousel images={adDetails.ad.localImagePaths} />
+                            
+                            {/* Visual Analysis Caption */}
+                            <div className="mt-3">
+                              {adDetails.ad.visualAnalysis ? (
+                                <p className="text-gray-600 dark:text-gray-400 text-sm italic">
+                                  {adDetails.ad.visualAnalysis}
+                                </p>
+                              ) : (
+                                <p className="text-gray-500 dark:text-gray-500 text-xs italic">
+                                  Visual elements description will appear here when processed
+                                </p>
+                              )}
+                            </div>
                           </div>
                         )}
 
@@ -425,6 +438,19 @@ export default function AdDetailModal({
                             <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Video</h4>
                             <div className="aspect-video bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
                               <p className="text-gray-500 dark:text-gray-400 text-sm">Video preview not yet implemented</p>
+                            </div>
+                            
+                            {/* Visual Analysis Caption for Video */}
+                            <div className="mt-3">
+                              {adDetails.ad.visualAnalysis ? (
+                                <p className="text-gray-600 dark:text-gray-400 text-sm italic">
+                                  {adDetails.ad.visualAnalysis}
+                                </p>
+                              ) : (
+                                <p className="text-gray-500 dark:text-gray-500 text-xs italic">
+                                  Visual elements description will appear here when processed
+                                </p>
+                              )}
                             </div>
                           </div>
                         )}
@@ -457,48 +483,31 @@ export default function AdDetailModal({
                         )}
                       </div>
 
-                      {/* Visuals Section */}
+                      {/* Audio Transcript Section */}
                       <div>
-                        <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Visuals</h4>
-                        {adDetails.ad.visualAnalysis ? (
+                        <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Audio Transcript</h4>
+                        {adDetails.ad.audioTranscription ? (
                           <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                            <p className="text-gray-900 dark:text-gray-100 text-sm">
-                              {adDetails.ad.visualAnalysis}
-                            </p>
+                            <pre className="text-gray-900 dark:text-gray-100 text-sm whitespace-pre-wrap">
+                              {adDetails.ad.audioTranscription}
+                            </pre>
+                          </div>
+                        ) : adDetails.ad.videoUrls && adDetails.ad.videoUrls.length > 0 ? (
+                          <div className="text-center py-6 text-gray-500 dark:text-gray-400">
+                            <Volume2 className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">Audio transcription not yet available</p>
+                            <p className="text-xs mt-1">Video detected - transcription will appear here when processed</p>
                           </div>
                         ) : (
                           <div className="text-center py-6 text-gray-500 dark:text-gray-400">
-                            <Eye className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                            <p className="text-sm">No visual analysis available</p>
-                            <p className="text-xs mt-1">Visual elements description will appear here when processed</p>
+                            <Volume2 className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">No video content detected</p>
+                            <p className="text-xs mt-1">Audio transcription is only available for video ads</p>
                           </div>
                         )}
                       </div>
                     </div>
 
-                    {/* Third Row: Audio Transcript (Full Width) */}
-                    <div>
-                      <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Audio Transcript</h4>
-                      {adDetails.ad.audioTranscription ? (
-                        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                          <pre className="text-gray-900 dark:text-gray-100 text-sm whitespace-pre-wrap">
-                            {adDetails.ad.audioTranscription}
-                          </pre>
-                        </div>
-                      ) : adDetails.ad.videoUrls && adDetails.ad.videoUrls.length > 0 ? (
-                        <div className="text-center py-6 text-gray-500 dark:text-gray-400">
-                          <Volume2 className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">Audio transcription not yet available</p>
-                          <p className="text-xs mt-1">Video detected - transcription will appear here when processed</p>
-                        </div>
-                      ) : (
-                        <div className="text-center py-6 text-gray-500 dark:text-gray-400">
-                          <Volume2 className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">No video content detected</p>
-                          <p className="text-xs mt-1">Audio transcription is only available for video ads</p>
-                        </div>
-                      )}
-                    </div>
                   </div>
                 </section>
               )}
