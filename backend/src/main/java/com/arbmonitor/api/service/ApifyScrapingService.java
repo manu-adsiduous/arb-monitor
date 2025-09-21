@@ -542,17 +542,26 @@ public class ApifyScrapingService {
             }
             
             long endDateTimestamp = adData.path("endDate").asLong(0);
+            LocalDateTime stopDate = null;
             if (endDateTimestamp > 0) {
                 try {
-                    ad.setAdDeliveryStopDate(LocalDateTime.ofInstant(
+                    stopDate = LocalDateTime.ofInstant(
                         java.time.Instant.ofEpochSecond(endDateTimestamp), 
-                        java.time.ZoneId.systemDefault()));
+                        java.time.ZoneId.systemDefault());
+                    ad.setAdDeliveryStopDate(stopDate);
                 } catch (Exception e) {
                     logger.debug("Could not parse end date timestamp: {}", endDateTimestamp);
                 }
             }
             
-            ad.setIsActive(true);
+            // Determine if ad is active based on delivery dates
+            boolean isActive = true;
+            if (stopDate != null) {
+                // If there's a stop date, check if it's in the future
+                isActive = stopDate.isAfter(LocalDateTime.now());
+            }
+            // If no stop date, ad is considered active
+            ad.setIsActive(isActive);
             ad.setScrapedAt(LocalDateTime.now());
             ad.setLastUpdated(LocalDateTime.now());
             

@@ -354,17 +354,17 @@ export default function DomainDetailPage() {
               href={`https://${domain.domainName}`} 
               target="_blank" 
               rel="noopener noreferrer" 
-              className="hover:bg-slate-100/50 dark:hover:bg-slate-800/50 rounded-xl px-4 py-2 text-sm font-medium text-slate-900 dark:text-white transition-colors flex items-center"
+              className="hover:bg-slate-100/50 dark:hover:bg-slate-800/50 rounded-xl p-2 text-slate-900 dark:text-white transition-colors flex items-center"
+              title="Visit Site"
             >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Visit Site
+              <ExternalLink className="h-4 w-4" />
             </a>
             <button 
               onClick={copyShareLink}
-              className="hover:bg-slate-100/50 dark:hover:bg-slate-800/50 rounded-xl px-4 py-2 text-sm font-medium text-slate-900 dark:text-white transition-colors flex items-center"
+              className="hover:bg-slate-100/50 dark:hover:bg-slate-800/50 rounded-xl p-2 text-slate-900 dark:text-white transition-colors flex items-center"
+              title="Share Report"
             >
-              <Share2 className="h-4 w-4 mr-2" />
-              Share Report
+              <Share2 className="h-4 w-4" />
             </button>
             <button 
               onClick={runAnalysis}
