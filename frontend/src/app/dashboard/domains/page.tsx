@@ -132,13 +132,10 @@ export default function DomainsPage() {
       setDomains([])
       const data = await domainApi.getDomains(DEMO_USER_ID)
       const domainsArray = Array.isArray(data) ? data : []
-      console.log(`📋 Loaded ${domainsArray.length} domains:`, domainsArray.map(d => ({ id: d.id, name: d.domainName })))
-      console.log(`🔍 Full domain objects:`, domainsArray)
       
       // Simple, direct state update
       setDomains(domainsArray)
     } catch (error) {
-      console.error("Error loading domains:", error)
       if (error instanceof ApiError) {
         setError(error.message)
         toast.error(`Failed to load domains: ${error.message}`)
@@ -152,7 +149,6 @@ export default function DomainsPage() {
   }
 
   const handleDeleteDomain = (domainId: number, domainName: string) => {
-    console.log(`Opening delete dialog for domain: ${domainName} (ID: ${domainId})`)
     setDeleteDialog({
       isOpen: true,
       domainId,
@@ -163,14 +159,12 @@ export default function DomainsPage() {
   const confirmDeleteDomain = async () => {
     if (!deleteDialog.domainId) return
 
-    console.log(`Confirming deletion of domain: ${deleteDialog.domainName} (ID: ${deleteDialog.domainId})`)
 
     try {
       await domainApi.deleteDomain(DEMO_USER_ID, deleteDialog.domainId)
       toast.success(`"${deleteDialog.domainName}" has been successfully deleted`)
       loadDomains() // Reload the list
     } catch (error) {
-      console.error("Error deleting domain:", error)
       if (error instanceof ApiError) {
         toast.error(`Failed to delete domain: ${error.message}`)
       } else {
@@ -200,7 +194,6 @@ export default function DomainsPage() {
           toast.error('Failed to pause scraping')
         }
       } catch (error) {
-        console.error('Error pausing scraping:', error)
         toast.error('Failed to pause scraping')
       }
     } else if (domain.processingStatus === 'PAUSED') {
@@ -217,7 +210,6 @@ export default function DomainsPage() {
           toast.error('Failed to resume scraping')
         }
       } catch (error) {
-        console.error('Error resuming scraping:', error)
         toast.error('Failed to resume scraping')
       }
     } else {
@@ -245,7 +237,6 @@ export default function DomainsPage() {
         toast.error('Failed to cancel scraping')
       }
     } catch (error) {
-      console.error('Error cancelling scraping:', error)
       toast.error('Failed to cancel scraping')
     }
   }
@@ -253,7 +244,6 @@ export default function DomainsPage() {
   const filteredDomains = Array.isArray(domains) ? domains.filter(domain => {
     // Validate domain object structure
     if (!domain || typeof domain.id !== 'number' || !domain.domainName) {
-      console.error(`❌ Invalid domain object:`, domain)
       return false
     }
     return domain.domainName.toLowerCase().includes(searchTerm.toLowerCase())
@@ -485,7 +475,6 @@ export default function DomainsPage() {
           <div className="flex items-center space-x-4 mt-4 md:mt-0">
             <button
               onClick={() => {
-                console.log("🔄 Manual refresh clicked")
                 loadDomains()
               }}
               disabled={loading}
@@ -560,7 +549,6 @@ export default function DomainsPage() {
             {filteredDomains.map((domain, index) => {
               // Validate domain before rendering
               if (!domain || typeof domain.id !== 'number' || !domain.domainName) {
-                console.error(`❌ Invalid domain at index ${index}:`, domain)
                 return null
               }
 

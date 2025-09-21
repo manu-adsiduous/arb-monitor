@@ -131,7 +131,6 @@ export default function DashboardLayout({
 
   // Load domains for search functionality
   useEffect(() => {
-    console.log("Auth status changed:", status, "Session:", !!session)
     if (status === "authenticated" || (status === "loading" && session)) {
       console.log("Loading domains for search...")
       loadDomainsForSearch()
@@ -164,17 +163,13 @@ export default function DashboardLayout({
       console.log("Loading domains for search...")
       setSearchLoading(true)
       const data = await domainApi.getDomains(DEMO_USER_ID)
-      console.log("Domains loaded for search:", data, "Type:", typeof data, "Array?", Array.isArray(data))
       
       if (Array.isArray(data)) {
         setAllDomains(data)
-        console.log("Set allDomains to:", data.length, "domains")
       } else {
-        console.error("Expected array but got:", typeof data, data)
         setAllDomains([])
       }
     } catch (error) {
-      console.error("Error loading domains for search:", error)
       setAllDomains([])
     } finally {
       setSearchLoading(false)
@@ -183,7 +178,6 @@ export default function DashboardLayout({
 
   // Also load domains on mount regardless of auth status (for debugging)
   useEffect(() => {
-    console.log("Component mounted, loading domains...")
     loadDomainsForSearch()
   }, [])
 

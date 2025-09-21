@@ -184,7 +184,6 @@ export default function AdDetailModal({
       setAdDetails(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error occurred')
-      console.error('Error fetching ad details:', err)
     } finally {
       setLoading(false)
       setNavigating(false)
@@ -241,7 +240,6 @@ export default function AdDetailModal({
       
       return params;
     } catch (error) {
-      console.warn('Failed to parse URL parameters:', error);
       return {};
     }
   }

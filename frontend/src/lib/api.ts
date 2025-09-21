@@ -81,30 +81,25 @@ async function apiCall<T>(
   }
 
   try {
-    console.log(`API Call: ${options.method || 'GET'} ${url}`, { headers, userId });
     
     const response = await fetch(url, {
       ...options,
       headers,
     });
 
-    console.log(`API Response: ${response.status} ${response.statusText}`);
 
     if (!response.ok) {
       let errorMessage = `HTTP error! status: ${response.status}`;
       try {
         const errorData = await response.json();
         errorMessage = errorData.error || errorMessage;
-        console.error('API Error Data:', errorData);
       } catch {
         // If we can't parse the error response, use the default message
-        console.error('Failed to parse API error response');
       }
       throw new ApiError(response.status, errorMessage);
     }
 
     const data = await response.json();
-    console.log('API Success Data:', data);
     return data;
   } catch (error) {
     if (error instanceof ApiError) {

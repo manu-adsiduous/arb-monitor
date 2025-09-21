@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @RestController
@@ -225,7 +224,7 @@ public class AdScrapingController {
             logger.info("Re-processing RAC extraction for domain: {}", domainName);
             
             // Start async RAC re-processing
-            CompletableFuture<Integer> future = apifyScrapingService.reprocessRacForDomain(domainName);
+            apifyScrapingService.reprocessRacForDomain(domainName);
             
             Map<String, Object> response = new HashMap<>();
             response.put("domain", domainName);
@@ -249,7 +248,7 @@ public class AdScrapingController {
             logger.info("Analyzing RAC pattern for domain: {}", domainName);
             
             // Start async pattern analysis
-            CompletableFuture<Map<String, Object>> future = apifyScrapingService.analyzeDomainRacPattern(domainName);
+            apifyScrapingService.analyzeDomainRacPattern(domainName);
             
             Map<String, Object> response = new HashMap<>();
             response.put("domain", domainName);

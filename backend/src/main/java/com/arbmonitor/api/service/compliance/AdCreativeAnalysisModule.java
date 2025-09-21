@@ -2,7 +2,6 @@ package com.arbmonitor.api.service.compliance;
 
 import com.arbmonitor.api.model.ScrapedAd;
 import com.arbmonitor.api.service.ImageAnalysisService;
-import com.arbmonitor.api.service.VideoAnalysisService;
 import com.arbmonitor.api.service.OpenAIAnalysisService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -24,9 +23,6 @@ public class AdCreativeAnalysisModule {
     
     @Autowired
     private ImageAnalysisService imageAnalysisService;
-    
-    @Autowired
-    private VideoAnalysisService videoAnalysisService;
     
     @Autowired
     private OpenAIAnalysisService openAIAnalysisService;

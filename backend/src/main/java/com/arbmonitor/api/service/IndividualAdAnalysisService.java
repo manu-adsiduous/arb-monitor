@@ -4,7 +4,6 @@ import com.arbmonitor.api.model.AdAnalysis;
 import com.arbmonitor.api.model.Domain;
 import com.arbmonitor.api.model.ScrapedAd;
 import com.arbmonitor.api.repository.AdAnalysisRepository;
-import com.arbmonitor.api.repository.ViolationRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +11,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 
 /**
@@ -25,9 +23,6 @@ public class IndividualAdAnalysisService {
     
     @Autowired
     private AdAnalysisRepository adAnalysisRepository;
-    
-    @Autowired
-    private ViolationRepository violationRepository;
     
     @Autowired
     private OpenAIAnalysisService openAIAnalysisService;

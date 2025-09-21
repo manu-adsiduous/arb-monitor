@@ -87,7 +87,7 @@ public class UserController {
             @RequestBody @Valid UserSettingsDTO settingsDTO) {
         
         try {
-            User user = userService.updateUserSettings(userId, settingsDTO);
+            userService.updateUserSettings(userId, settingsDTO);
             return ResponseEntity.ok(Map.of("message", "Settings updated successfully"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -107,7 +107,7 @@ public class UserController {
             @RequestBody @Valid ApiKeyUpdateRequest request) {
         
         try {
-            User user = userService.updateMetaApiKey(userId, request.getMetaApiKey());
+            userService.updateMetaApiKey(userId, request.getMetaApiKey());
             return ResponseEntity.ok(Map.of("message", "Meta API key updated successfully"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -126,7 +126,7 @@ public class UserController {
         try {
             // TODO: Implement actual Meta API validation
             // For now, just mark as valid
-            User user = userService.validateApiKey(userId, true);
+            userService.validateApiKey(userId, true);
             
             return ResponseEntity.ok(Map.of(
                 "valid", true,

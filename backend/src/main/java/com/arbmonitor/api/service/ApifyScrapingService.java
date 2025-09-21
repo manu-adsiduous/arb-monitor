@@ -5,7 +5,6 @@ import com.arbmonitor.api.model.Domain;
 import com.arbmonitor.api.repository.ScrapedAdRepository;
 import com.arbmonitor.api.repository.DomainRepository;
 import com.arbmonitor.api.repository.AdAnalysisRepository;
-import com.arbmonitor.api.service.MediaStorageService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -26,7 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;

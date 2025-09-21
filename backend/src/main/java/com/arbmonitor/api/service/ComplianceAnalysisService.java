@@ -2,8 +2,6 @@ package com.arbmonitor.api.service;
 
 import com.arbmonitor.api.model.*;
 import com.arbmonitor.api.repository.*;
-import com.arbmonitor.api.service.ImageAnalysisService;
-import com.arbmonitor.api.service.VideoAnalysisService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -166,6 +164,7 @@ public class ComplianceAnalysisService {
             
             // Build detailed analysis notes
             String analysisNotes = buildAnalysisNotes(aiResult);
+            analysis.setAnalysisNotes(analysisNotes);
             
         } catch (Exception e) {
             logger.error("OpenAI analysis failed for ad {}: {}", scrapedAd.getMetaAdId(), e.getMessage());

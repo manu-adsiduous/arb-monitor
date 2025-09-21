@@ -119,11 +119,11 @@ public class AdAnalysisService {
         if (metaAd.getAdCreationTime() != null) {
             try {
                 // Meta API typically returns ISO format: "2024-01-15T10:30:00+0000"
-                LocalDateTime creationTime = LocalDateTime.parse(
+                // Parse and validate the date format, but we store creation time in our own createdAt field
+                LocalDateTime.parse(
                     metaAd.getAdCreationTime().replace("+0000", ""),
                     DateTimeFormatter.ISO_LOCAL_DATE_TIME
                 );
-                // Note: We're storing this in our own createdAt field, not a separate field
             } catch (DateTimeParseException e) {
                 logger.warn("Could not parse ad creation time: {}", metaAd.getAdCreationTime());
             }

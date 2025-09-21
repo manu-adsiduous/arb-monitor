@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.io.*;
 import java.net.URL;
@@ -24,11 +23,7 @@ public class MediaStorageService {
     @Value("${app.media.storage.path:./media}")
     private String mediaStoragePath;
     
-    private final RestTemplate restTemplate;
-    
-    public MediaStorageService(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
-    }
+    // RestTemplate removed - not currently used but may be needed for future media downloading features
     
     /**
      * Download and store an image file locally
